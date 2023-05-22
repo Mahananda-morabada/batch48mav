@@ -1,0 +1,115 @@
+VotingApp Assignment 
+1. cd $home   ---to enter into home directory 
+2 .yum install git -y --install git 
+3 .git clone  https://github.com/ashishrpandey/example-voting-app  --pull the image from git hub registry 
+
+NOTE : I got below msg when i run it bcz i runned the previously also , so if we want we can continue the installation with same folder otherwise we can delete   the folder and recreate the new one and continue 
+
+FOLLOWED STEPS : 
+[root@ip-172-31-29-67 ~]#  git clone https://github.com/ashishrpandey/example-voting-app
+fatal: destination path 'example-voting-app' already exists and is not an empty directory.
+[root@ip-172-31-29-67 ~]# ls
+example-voting-app  kubernetes-training
+
+[root@ip-172-31-29-67 ~]# rm -rf example-voting-app
+[root@ip-172-31-29-67 ~]# ls
+kubernetes-training
+[root@ip-172-31-29-67 ~]#
+[root@ip-172-31-29-67 ~]#  git clone https://github.com/ashishrpandey/example-voting-app
+Cloning into 'example-voting-app'...
+remote: Enumerating objects: 494, done.
+remote: Total 494 (delta 0), reused 0 (delta 0), pack-reused 494
+Receiving objects: 100% (494/494), 236.18 KiB | 1.05 MiB/s, done.
+Resolving deltas: 100% (179/179), done.
+[root@ip-172-31-29-67 ~]#
+[root@ip-172-31-29-67 ~]#
+[root@ip-172-31-29-67 ~]# ls
+example-voting-app  kubernetes-training
+[root@ip-172-31-29-67 ~]#
+
+4. Then eneter the folder -->/root/example-voting-app/k8s-specifications
+   make below chnages for worker node to access the gui 
+   vote-service.yaml --chnage the nodePort: 31002
+   vote-service.yaml --chnage the nodePort: 31003
+
+5 . then apply all the yamls using cmd --kubectl apply -f .
+
+6.check the pod status and take ur public ip with node port to open voting and result gui 
+  http://54.169.242.96:31002/ --voting gui 
+  http://54.169.242.96:31003/ --result gui 
+  
+OBSERVATION WHEN DID DELETE OF PODS 
+
+1. delete of voting pod 
+
+[root@ip-172-31-29-67 k8s-specifications]# date
+Wed May 17 02:51:25 UTC 2023
+[root@ip-172-31-29-67 k8s-specifications]# kubectl delete po vote-94849dc97-chw9b
+pod "vote-94849dc97-chw9b" deleted
+[root@ip-172-31-29-67 k8s-specifications]# date
+Wed May 17 02:51:48 UTC 2023
+[root@ip-172-31-29-67 k8s-specifications]# kubectl get po
+NAME                      READY   STATUS    RESTARTS   AGE
+db-b54cd94f4-z2s2f        1/1     Running   0          55m
+redis-868d64d78-n766k     1/1     Running   0          55m
+result-5d57b59f4b-f6bnt   1/1     Running   0          55m
+vote-94849dc97-4ghbt      1/1     Running   0          20s
+worker-dd46d7584-6bg7z    1/1     Running   0          55m
+[root@ip-172-31-29-67 k8s-specifications]#
+
+so when we delete the voting pod it will recreate and also we can acecss the gui  bcz of replicas set is defined in the yaml so , it will create the pod within 10s approx .
+
+2.Deletion of worker pod 
+
+[root@ip-172-31-29-67 k8s-specifications]# kubectl delete po worker-dd46d7584-6bg7z
+pod "worker-dd46d7584-6bg7z" deleted
+[root@ip-172-31-29-67 k8s-specifications]# kubectl get po
+NAME                      READY   STATUS    RESTARTS   AGE
+db-b54cd94f4-z2s2f        1/1     Running   0          58m
+redis-868d64d78-n766k     1/1     Running   0          58m
+result-5d57b59f4b-f6bnt   1/1     Running   0          58m
+vote-94849dc97-4ghbt      1/1     Running   0          3m34s
+worker-dd46d7584-2zxbl    1/1     Running   0          14s
+[root@ip-172-31-29-67 k8s-specifications]#
+
+So when we delete the woeker it will also be recreated bcz of replicas 
+
+3 . Deletion of db pod 
+
+after deletion of db pod result and worker pod got restarted bcz of in result folder when we open server.json there its written  as waiting for db so bcz of interconnection of db with worker and result pods bcz of its storage pod where worker will push the votes and result pod pull the votes 
+[root@ip-172-31-29-67 k8s-specifications]# kubectl get po
+NAME                      READY   STATUS    RESTARTS   AGE
+db-b54cd94f4-zdwqs        1/1     Running   0          49s
+redis-868d64d78-gkjtq     1/1     Running   0          40m
+result-5d57b59f4b-mgmbs   1/1     Running   1          40m
+vote-94849dc97-qzrgn      1/1     Running   0          40m
+worker-dd46d7584-h7hn5    1/1     Running   1          40m
+
+STEPS TO RECOVER THE PODS IS
+
+deleted the result and worker pods then pods are running state without restart 
+
+[root@ip-172-31-29-67 result]# kubectl delete po result-5d57b59f4b-mgmbs worker-dd46d7584-h7hn5
+pod "result-5d57b59f4b-mgmbs" deleted
+pod "worker-dd46d7584-h7hn5" deleted
+[root@ip-172-31-29-67 result]# kubectl get po
+NAME                      READY   STATUS    RESTARTS   AGE
+db-b54cd94f4-zdwqs        1/1     Running   0          8m22s
+redis-868d64d78-gkjtq     1/1     Running   0          48m
+result-5d57b59f4b-bgtw4   1/1     Running   0          9s
+vote-94849dc97-qzrgn      1/1     Running   0          48m
+worker-dd46d7584-nkr9g    1/1     Running   0          9s
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
